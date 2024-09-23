@@ -49,6 +49,22 @@ function createMask() {
     drawShapeToMask(mask, drawing);
     mask.endFill();
   });
+
+  if (canvas.regions) {
+    canvas.regions.placeables.forEach((region) => {
+      const isMask = region.document.behaviors.contents.some(b => b.type == "suppressWeather");
+      if (!isMask) return;
+      mask.beginFill(0x0000ff);
+      for (const node of region.polygonTree) {
+        if (node.isHole) continue;
+        mask.drawShape(node.polygon);
+        mask.beginHole();
+        for (const hole of node.children) mask.drawShape(hole.polygon);
+        mask.endHole();
+      }
+    });
+  }
+
   return mask;
 }
 
@@ -63,6 +79,24 @@ function createInvertedMask() {
     drawShapeToMask(mask, drawing);
     mask.endHole();
   });
+
+  if (canvas.regions) {
+    canvas.regions.placeables.forEach((region) => {
+      const isMask = region.document.behaviors.contents.some(b => b.type == "suppressWeather");
+      if (!isMask) return;
+      for (const node of [...region.polygonTree].filter(p => !p.isHole)) {
+        mask.beginHole();
+        mask.drawShape(node.polygon);
+        mask.endHole();
+      }
+      for (const node of [...region.polygonTree].filter(p => p.isHole)) {
+        mask.beginFill(0x0000ff);
+        mask.drawShape(node.polygon);
+        mask.endFill();
+      }
+    });
+  }
+
   return mask;
 }
 
